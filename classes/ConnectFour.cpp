@@ -64,11 +64,12 @@ bool ConnectFour::actionForEmptyHolder(BitHolder &holder)
         return false;
     }
 
-    Bit* bit = createPiece(getCurrentPlayer());
-    bit->setPosition(target->getPosition());
-    target->setBit(bit);
-    endTurn();
-    return true;
+    if (dropPiece(column, row, getCurrentPlayer())) {
+        endTurn();
+        return true;
+    }
+
+    return false;
 }
 
 bool ConnectFour::canBitMoveFrom(Bit &bit, BitHolder &src)
@@ -198,6 +199,29 @@ int ConnectFour::getDropRowOnBoard(const std::vector<std::vector<int>> &board, i
         }
     }
     return -1;
+}
+
+bool ConnectFour::dropPiece(int column, int row, Player* player)
+{
+    if (!player) {
+        return false;
+    }
+
+    ChessSquare* target = _grid->getSquare(column, row);
+    if (!target || target->bit()) {
+        return false;
+    }
+
+    ChessSquare* topSquare = _grid->getSquare(column, 0);
+    if (!topSquare) {
+        return false;
+    }
+
+    Bit* bit = createPiece(player);
+    bit->setPosition(topSquare->getPosition());
+    target->setBit(bit);
+    bit->moveTo(target->getPosition());
+    return true;
 }
 
 bool ConnectFour::checkLineOnBoard(const std::vector<std::vector<int>> &board, int x, int y, int dx, int dy, int playerValue) const

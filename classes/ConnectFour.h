@@ -37,6 +37,7 @@ private:
     bool        checkLineOnBoard(const std::vector<std::vector<int>> &board, int x, int y, int dx, int dy, int playerValue) const;
     int         getDropRow(int column) const;
     int         getDropRowOnBoard(const std::vector<std::vector<int>> &board, int column) const;
+    bool        dropPiece(int column, int row, Player* player);
     std::vector<std::vector<int>> getBoardArray() const;
 
     Grid*       _grid;
