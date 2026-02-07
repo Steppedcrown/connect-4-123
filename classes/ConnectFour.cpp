@@ -16,7 +16,7 @@ void ConnectFour::setUpBoard()
     _gameOptions.rowX = kColumns;
     _gameOptions.rowY = kRows;
 
-    _grid->initializeSquares(80, "boardsquare.png");
+    _grid->initializeSquares(80, "square.png");
 
     /*if (gameHasAI()) {
         setAIPlayer(AI_PLAYER);
