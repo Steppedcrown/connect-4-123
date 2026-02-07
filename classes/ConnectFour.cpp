@@ -18,9 +18,9 @@ void ConnectFour::setUpBoard()
 
     _grid->initializeSquares(80, "square.png");
 
-    /*if (gameHasAI()) {
+    if (gameHasAI()) {
         setAIPlayer(AI_PLAYER);
-    }*/
+    }
 
     startGame();
 }
@@ -44,6 +44,29 @@ int ConnectFour::getDropRow(int column) const
         }
     }
     return -1;
+}
+
+bool ConnectFour::dropPiece(int column, int row, Player* player)
+{
+    if (!player) {
+        return false;
+    }
+
+    ChessSquare* target = _grid->getSquare(column, row);
+    if (!target || target->bit()) {
+        return false;
+    }
+
+    ChessSquare* topSquare = _grid->getSquare(column, 0);
+    if (!topSquare) {
+        return false;
+    }
+
+    Bit* bit = createPiece(player);
+    bit->setPosition(topSquare->getPosition());
+    target->setBit(bit);
+    bit->moveTo(target->getPosition());
+    return true;
 }
 
 bool ConnectFour::actionForEmptyHolder(BitHolder &holder)
@@ -201,29 +224,6 @@ int ConnectFour::getDropRowOnBoard(const std::vector<std::vector<int>> &board, i
     return -1;
 }
 
-bool ConnectFour::dropPiece(int column, int row, Player* player)
-{
-    if (!player) {
-        return false;
-    }
-
-    ChessSquare* target = _grid->getSquare(column, row);
-    if (!target || target->bit()) {
-        return false;
-    }
-
-    ChessSquare* topSquare = _grid->getSquare(column, 0);
-    if (!topSquare) {
-        return false;
-    }
-
-    Bit* bit = createPiece(player);
-    bit->setPosition(topSquare->getPosition());
-    target->setBit(bit);
-    bit->moveTo(target->getPosition());
-    return true;
-}
-
 bool ConnectFour::checkLineOnBoard(const std::vector<std::vector<int>> &board, int x, int y, int dx, int dy, int playerValue) const
 {
     for (int i = 1; i < 4; i++) {
@@ -261,6 +261,149 @@ bool ConnectFour::isWinningMove(int x, int y, Player* player) const
            checkLine(x, y, -1, 1, player);
 }
 
+bool ConnectFour::boardFull(const std::vector<std::vector<int>> &board) const
+{
+    for (int y = 0; y < kRows; y++) {
+        for (int x = 0; x < kColumns; x++) {
+            if (board[y][x] == 0) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool ConnectFour::hasWinner(const std::vector<std::vector<int>> &board, int playerValue) const
+{
+    for (int y = 0; y < kRows; y++) {
+        for (int x = 0; x < kColumns; x++) {
+            if (board[y][x] != playerValue) {
+                continue;
+            }
+            if (checkLineOnBoard(board, x, y, 1, 0, playerValue) ||
+                checkLineOnBoard(board, x, y, 0, 1, playerValue) ||
+                checkLineOnBoard(board, x, y, 1, 1, playerValue) ||
+                checkLineOnBoard(board, x, y, -1, 1, playerValue)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+int ConnectFour::scoreWindow(const int window[4], int playerValue, int opponentValue) const
+{
+    int playerCount = 0;
+    int opponentCount = 0;
+    int emptyCount = 0;
+
+    for (int i = 0; i < 4; i++) {
+        if (window[i] == playerValue) {
+            playerCount++;
+        } else if (window[i] == opponentValue) {
+            opponentCount++;
+        } else {
+            emptyCount++;
+        }
+    }
+
+    if (playerCount == 4) return 100000;
+    if (playerCount == 3 && emptyCount == 1) return 50;
+    if (playerCount == 2 && emptyCount == 2) return 10;
+    if (opponentCount == 3 && emptyCount == 1) return -80;
+    if (opponentCount == 4) return -100000;
+
+    return 0;
+}
+
+int ConnectFour::evaluateBoard(const std::vector<std::vector<int>> &board, int playerValue, int opponentValue) const
+{
+    int score = 0;
+
+    // Center column preference
+    int centerColumn = kColumns / 2;
+    int centerCount = 0;
+    for (int y = 0; y < kRows; y++) {
+        if (board[y][centerColumn] == playerValue) {
+            centerCount++;
+        }
+    }
+    score += centerCount * 6;
+
+    // Horizontal windows
+    for (int y = 0; y < kRows; y++) {
+        for (int x = 0; x <= kColumns - 4; x++) {
+            int window[4] = { board[y][x], board[y][x + 1], board[y][x + 2], board[y][x + 3] };
+            score += scoreWindow(window, playerValue, opponentValue);
+        }
+    }
+
+    // Vertical windows
+    for (int x = 0; x < kColumns; x++) {
+        for (int y = 0; y <= kRows - 4; y++) {
+            int window[4] = { board[y][x], board[y + 1][x], board[y + 2][x], board[y + 3][x] };
+            score += scoreWindow(window, playerValue, opponentValue);
+        }
+    }
+
+    // Diagonal (down-right)
+    for (int y = 0; y <= kRows - 4; y++) {
+        for (int x = 0; x <= kColumns - 4; x++) {
+            int window[4] = { board[y][x], board[y + 1][x + 1], board[y + 2][x + 2], board[y + 3][x + 3] };
+            score += scoreWindow(window, playerValue, opponentValue);
+        }
+    }
+
+    // Diagonal (up-right)
+    for (int y = 3; y < kRows; y++) {
+        for (int x = 0; x <= kColumns - 4; x++) {
+            int window[4] = { board[y][x], board[y - 1][x + 1], board[y - 2][x + 2], board[y - 3][x + 3] };
+            score += scoreWindow(window, playerValue, opponentValue);
+        }
+    }
+
+    return score;
+}
+
+int ConnectFour::negamax(std::vector<std::vector<int>> &board, int depth, int alpha, int beta, int playerValue, int opponentValue) const
+{
+    if (hasWinner(board, opponentValue)) {
+        return -kBigScore - depth;
+    }
+    if (hasWinner(board, playerValue)) {
+        return kBigScore + depth;
+    }
+    if (depth == 0 || boardFull(board)) {
+        return evaluateBoard(board, playerValue, opponentValue);
+    }
+
+    int bestScore = -kBigScore;
+
+    int preferredColumns[] = {3, 2, 4, 1, 5, 0, 6};
+    for (int column : preferredColumns) {
+        int row = getDropRowOnBoard(board, column);
+        if (row < 0) {
+            continue;
+        }
+
+        board[row][column] = playerValue;
+        int score = -negamax(board, depth - 1, -beta, -alpha, opponentValue, playerValue);
+        board[row][column] = 0;
+
+        if (score > bestScore) {
+            bestScore = score;
+        }
+        if (bestScore > alpha) {
+            alpha = bestScore;
+        }
+        if (alpha >= beta) {
+            break;
+        }
+    }
+
+    return bestScore;
+}
+
 void ConnectFour::updateAI()
 {
     if (!gameHasAI()) {
@@ -273,54 +416,32 @@ void ConnectFour::updateAI()
 
     std::vector<std::vector<int>> board = getBoardArray();
 
-    int selectedColumn = -1;
+    int bestScore = -kBigScore;
+    int bestColumn = -1;
 
-    for (int column = 0; column < kColumns; column++) {
+    int preferredColumns[] = {3, 2, 4, 1, 5, 0, 6};
+    for (int column : preferredColumns) {
         int row = getDropRowOnBoard(board, column);
         if (row < 0) {
             continue;
         }
+
         board[row][column] = currentValue;
-        if (isWinningMoveOnBoard(board, column, row, currentValue)) {
-            selectedColumn = column;
-        }
+        int score = -negamax(board, kMaxDepth - 1, -kBigScore, kBigScore, opponentValue, currentValue);
         board[row][column] = 0;
-        if (selectedColumn != -1) {
-            break;
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestColumn = column;
         }
     }
 
-    if (selectedColumn == -1) {
-        for (int column = 0; column < kColumns; column++) {
-            int row = getDropRowOnBoard(board, column);
-            if (row < 0) {
-                continue;
-            }
-            board[row][column] = opponentValue;
-            if (isWinningMoveOnBoard(board, column, row, opponentValue)) {
-                selectedColumn = column;
-            }
-            board[row][column] = 0;
-            if (selectedColumn != -1) {
-                break;
-            }
-        }
-    }
-
-    if (selectedColumn == -1) {
-        int preferredColumns[] = {3, 2, 4, 1, 5, 0, 6};
-        for (int column : preferredColumns) {
-            if (getDropRowOnBoard(board, column) >= 0) {
-                selectedColumn = column;
-                break;
-            }
-        }
-    }
-
-    if (selectedColumn != -1) {
-        int row = getDropRow(selectedColumn);
+    if (bestColumn != -1) {
+        int row = getDropRow(bestColumn);
         if (row >= 0) {
-            actionForEmptyHolder(*_grid->getSquare(selectedColumn, row));
+            if (dropPiece(bestColumn, row, currentPlayer)) {
+                endTurn();
+            }
         }
     }
 }

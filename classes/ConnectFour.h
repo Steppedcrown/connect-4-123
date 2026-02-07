@@ -28,6 +28,8 @@ private:
     static const int kRows = 6;
     static const int kRedPlayer = 0;
     static const int kYellowPlayer = 1;
+    static const int kMaxDepth = 5;
+    static const int kBigScore = 1000000;
 
     Bit*        createPiece(Player* player);
     Player*     ownerAt(int x, int y) const;
@@ -39,6 +41,11 @@ private:
     int         getDropRowOnBoard(const std::vector<std::vector<int>> &board, int column) const;
     bool        dropPiece(int column, int row, Player* player);
     std::vector<std::vector<int>> getBoardArray() const;
+    bool        boardFull(const std::vector<std::vector<int>> &board) const;
+    bool        hasWinner(const std::vector<std::vector<int>> &board, int playerValue) const;
+    int         scoreWindow(const int window[4], int playerValue, int opponentValue) const;
+    int         evaluateBoard(const std::vector<std::vector<int>> &board, int playerValue, int opponentValue) const;
+    int         negamax(std::vector<std::vector<int>> &board, int depth, int alpha, int beta, int playerValue, int opponentValue) const;
 
     Grid*       _grid;
 };
