@@ -46,4 +46,7 @@ private:
     int         negamax(std::vector<std::vector<int>> &board, int depth, int alpha, int beta, int playerValue, int opponentValue) const;
 
     Grid*       _grid;
+    std::chrono::steady_clock::time_point _aiTurnStart;
+    unsigned int _aiTurnNumber;
+    bool _aiDelayActive;
 };

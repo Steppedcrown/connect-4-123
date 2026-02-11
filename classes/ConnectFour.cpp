@@ -1,8 +1,9 @@
 #include "ConnectFour.h"
 
-ConnectFour::ConnectFour() : Game()
+ConnectFour::ConnectFour() : Game(), _aiTurnNumber(0), _aiDelayActive(false)
 {
     _grid = new Grid(kColumns, kRows);
+    _aiTurnStart = std::chrono::steady_clock::now();
 }
 
 ConnectFour::~ConnectFour()
@@ -15,6 +16,8 @@ void ConnectFour::setUpBoard()
     setNumberOfPlayers(2);
     _gameOptions.rowX = kColumns;
     _gameOptions.rowY = kRows;
+    _aiDelayActive = false;
+    _aiTurnNumber = 0;
 
     _grid->initializeSquares(80, "square.png");
 
@@ -202,6 +205,8 @@ void ConnectFour::setStateString(const std::string &s)
     });
 }
 
+/* -------------------- Helper functions for AI evaluation and search -------------------- */
+
 std::vector<std::vector<int>> ConnectFour::getBoardArray() const
 {
     std::vector<std::vector<int>> board(kRows, std::vector<int>(kColumns, 0));
@@ -387,6 +392,20 @@ void ConnectFour::updateAI()
     if (!gameHasAI()) {
         return;
     }
+
+    unsigned int turnNo = getCurrentTurnNo();
+    if (!_aiDelayActive || _aiTurnNumber != turnNo) {
+        _aiTurnNumber = turnNo;
+        _aiTurnStart = std::chrono::steady_clock::now();
+        _aiDelayActive = true;
+        return;
+    }
+
+    auto elapsed = std::chrono::steady_clock::now() - _aiTurnStart;
+    if (elapsed < std::chrono::milliseconds(1000)) {
+        return;
+    }
+    _aiDelayActive = false;
 
     Player* currentPlayer = getCurrentPlayer();
     int currentValue = currentPlayer->playerNumber() + 1;
