@@ -1,11 +1,3 @@
-Using the provided code that can be downloaded from this github add a new class that inherits from game.cpp in the same way TicTacToe.cpp does and implement a working version of the game Connect 4. The game should be added as a fourth choice from the menu so the choices are Tic Tac Toe, Checkers, Othello and now Connect 4.
+This project implements Connect 4 as a new game mode alongside the existing titles, using the shared `Game` and `Grid` infrastructure. The board is a 7x6 grid of squares, and a move selects a column then drops a piece to the lowest open row. Pieces are animated from the top square into their final position, and the game checks horizontal, vertical, and diagonal lines for four-in-a-row to declare a winner, with a draw detected when the grid is full.
 
-The game must be playable by both by 2 people and vs. an AI. Your implementation must check for the winning condition, and display that on the right hand side the same way the current setup does for tic-tac-toe. The stopGame() method is expected to clean up and delete any memory allocated.
-
-Look at the new Grid.cpp class and see how it is used in Checkers.cpp for a good understanding about laying out a useable grid.
-
-For extra credit, when a game piece is added to the board, make it animate into place instead of just appearing in it's final spot.
-
-Graphic files are provided for the game pieces called yellow.png and red.png.
-
-For the submission, create a new github based on the above code-base and provide a link to that along with a complete readme.md on how your implementation works.
+The AI uses a depth-limited negamax search with alpha-beta pruning to pick a column. It evaluates candidate moves with a heuristic that favors center control and strong four-cell windows while blocking opponent threats. A slight delay was added to the ai turns to prevent it from taking action immediately after the player. This assignment was completed with the assistance of generative AI.
