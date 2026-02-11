@@ -33,8 +33,6 @@ private:
 
     Bit*        createPiece(Player* player);
     Player*     ownerAt(int x, int y) const;
-    bool        isWinningMove(int x, int y, Player* player) const;
-    bool        isWinningMoveOnBoard(const std::vector<std::vector<int>> &board, int x, int y, int playerValue) const;
     bool        checkLine(int x, int y, int dx, int dy, Player* player) const;
     bool        checkLineOnBoard(const std::vector<std::vector<int>> &board, int x, int y, int dx, int dy, int playerValue) const;
     int         getDropRow(int column) const;

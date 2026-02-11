@@ -239,28 +239,6 @@ bool ConnectFour::checkLineOnBoard(const std::vector<std::vector<int>> &board, i
     return true;
 }
 
-bool ConnectFour::isWinningMoveOnBoard(const std::vector<std::vector<int>> &board, int x, int y, int playerValue) const
-{
-    return checkLineOnBoard(board, x, y, 1, 0, playerValue) ||
-           checkLineOnBoard(board, x, y, 0, 1, playerValue) ||
-           checkLineOnBoard(board, x, y, 1, 1, playerValue) ||
-           checkLineOnBoard(board, x, y, -1, 1, playerValue);
-}
-
-bool ConnectFour::isWinningMove(int x, int y, Player* player) const
-{
-    if (!player) {
-        return false;
-    }
-    if (ownerAt(x, y) != player) {
-        return false;
-    }
-    return checkLine(x, y, 1, 0, player) ||
-           checkLine(x, y, 0, 1, player) ||
-           checkLine(x, y, 1, 1, player) ||
-           checkLine(x, y, -1, 1, player);
-}
-
 bool ConnectFour::boardFull(const std::vector<std::vector<int>> &board) const
 {
     for (int y = 0; y < kRows; y++) {
